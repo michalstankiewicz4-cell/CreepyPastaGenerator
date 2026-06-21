@@ -257,6 +257,14 @@ select,
   accent-color: var(--accent);
 }
 
+.toggle input:disabled {
+  cursor: not-allowed;
+}
+
+.toggle input:disabled + span {
+  opacity: 0.45;
+}
+
 .token-field,
 .select-field {
   display: grid;
@@ -319,7 +327,7 @@ select,
 }
 
 .inline-frame {
-  width: min(42%, 320px);
+  width: min(35.7%, 272px);
   margin: 4px 0 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -716,6 +724,93 @@ textarea:focus {
 
 .tab-panel[hidden] {
   display: none;
+}
+
+/* ===== POD-ZAKŁADKI (Klucze / Treść / Grafika / Dźwięk) ===== */
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.subtab {
+  flex: 1 1 auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.subtab:hover {
+  color: var(--text);
+}
+
+.subtab.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(214, 75, 59, 0.12);
+}
+
+.subpanel {
+  display: grid;
+  gap: 14px;
+}
+
+.subpanel[hidden] {
+  display: none;
+}
+
+/* Wybór jednokrotny (radio) — np. źródło inspiracji / źródło obrazów */
+.radio-field {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.radio-field legend {
+  padding: 0 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.radio input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+.radio em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.82rem;
+}
+
+.field-hint {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: var(--muted);
 }
 
 /* Wykresy w modalu mają pełną szerokość */

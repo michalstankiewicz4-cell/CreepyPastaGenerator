@@ -494,6 +494,18 @@
     });
   });
 
+  // ---- Sub-tab switching (Klucze / Treść / Grafika / Dźwięk w zakładce AI) ----
+  document.querySelectorAll(".subtab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".subtab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      const targetId = "sub-" + tab.dataset.subtab;
+      document.querySelectorAll(".subpanel").forEach((panel) => {
+        panel.hidden = panel.id !== targetId;
+      });
+    });
+  });
+
   // ---- Init ----
   makeChartInteraction(paceCanvas, "pace", THEME.pace);
   makeChartInteraction(fearCanvas, "fear", THEME.fear);

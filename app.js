@@ -5,7 +5,7 @@ const memoryKeys = {
 
 const storyVersion = 3;
 const hfModel = "openai/gpt-oss-120b:fastest";
-const googleModel = "gemini-3.5-flash"; // Google AI Studio (Gemini) do inspiracji z groundingiem
+const googleModel = "gemini-2.5-flash-lite"; // domyslny/fallback model Gemini do inspiracji
 const scpWikiBase = "https://scp-wiki.wikidot.com";
 // Proxy CORS do SCP Wiki (po kolei, az ktores zadziala). r.jina.ai zwraca czysty
 // tekst (markdown) — najpewniejsze; allorigins to zapas zwracajacy surowy HTML.
@@ -31,19 +31,30 @@ const clearButton = document.querySelector("#clear-button");
 const speakButton = document.querySelector("#speak-button");
 const aiToggle = document.querySelector("#ai-toggle");
 const researchToggle = document.querySelector("#research-toggle");
-const researchSourceSelect = document.querySelector("#research-source");
 const imageToggle = document.querySelector("#image-toggle");
-const imageProviderSelect = document.querySelector("#image-provider");
 const imageModelSelect = document.querySelector("#image-model");
 const narratorToggle = document.querySelector("#narrator-toggle");
 const hfTokenInput = document.querySelector("#hf-token");
 const tokenStatusEl = document.querySelector("#token-status");
 const googleKeyInput = document.querySelector("#google-key");
 const googleKeyStatusEl = document.querySelector("#google-key-status");
-const hfTokenBlock = document.querySelector("#hf-token-block");
-const googleKeyBlock = document.querySelector("#google-key-block");
 const geminiModelSelect = document.querySelector("#gemini-model");
 const geminiGroundingToggle = document.querySelector("#gemini-grounding");
+const geminiBlock = document.querySelector("#gemini-block");
+
+// Pomocnicze do grup radio (zrodlo inspiracji / zrodlo obrazow).
+function getRadio(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || "";
+}
+function setRadio(name, value) {
+  const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (el) el.checked = true;
+}
+function onRadioChange(name, handler) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((el) =>
+    el.addEventListener("change", handler),
+  );
+}
 const storyTitleEl = document.querySelector("#story-title");
 const storyOutputEl = document.querySelector("#story-output");
 const choiceListEl = document.querySelector("#choice-list");
@@ -52,13 +63,14 @@ const modeBadgeEl = document.querySelector("#mode-badge");
 const preferences = loadPreferences();
 aiToggle.checked = preferences.textAi;
 researchToggle.checked = preferences.research;
-researchSourceSelect.value = preferences.researchSource;
+setRadio("research-source", preferences.researchSource);
 geminiModelSelect.value = preferences.geminiModel;
 geminiGroundingToggle.checked = preferences.geminiGrounding;
 imageToggle.checked = preferences.imageAi;
-imageProviderSelect.value = preferences.imageProvider;
+setRadio("image-provider", preferences.imageProvider);
 imageModelSelect.value = preferences.imageModel;
 updateImageProviderUI();
+setRadio("key-storage", preferences.keyStorage);
 narratorToggle.checked = preferences.narrator;
 // Token/klucz trzymamy w zmiennej w pamieci jako zrodlo prawdy — pole <input type="password">
 // po odswiezeniu bywa przejmowane przez autofill przegladarki i zwraca pusta wartosc do JS.
@@ -71,21 +83,23 @@ updateTokenStatus();
 updateGoogleKeyStatus();
 updateOptionsVisibility();
 
-// Pokazuje pola tylko gdy sa potrzebne: token HF (tekst lub obrazy przez HF),
-// klucz Google (zrodlo inspiracji = Google AI), a wybor zrodla wyszarza gdy research off.
+// Pokazuje opcje Gemini (model + grounding) tylko gdy zrodlo inspiracji = Google AI,
+// a radia zrodla wyszarza, gdy research jest wylaczony. Klucze maja wlasna pod-zakladke.
 function updateOptionsVisibility() {
-  const usesHf = aiToggle.checked || imageProviderSelect.value === "huggingface";
-  hfTokenBlock.hidden = !usesHf;
+  geminiBlock.hidden = getRadio("research-source") !== "google";
+  document
+    .querySelectorAll('input[name="research-source"]')
+    .forEach((el) => (el.disabled = !researchToggle.checked));
+}
 
-  researchSourceSelect.disabled = !researchToggle.checked;
-
-  const usesGoogle = researchToggle.checked && researchSourceSelect.value === "google";
-  googleKeyBlock.hidden = !usesGoogle;
+// W trybie RAM klucz zyje tylko w pamieci sesji; w localhost jest zapisany w przegladarce.
+function keyStatusText() {
+  return getRadio("key-storage") === "ram" ? "✓ w pamięci" : "✓ zapisany";
 }
 
 function setSavedStatus(el, hasValue) {
   if (!el) return;
-  el.textContent = hasValue ? "✓ zapisany" : "";
+  el.textContent = hasValue ? keyStatusText() : "";
   el.className = hasValue ? "token-status saved" : "token-status";
 }
 
@@ -94,14 +108,7 @@ function updateGoogleKeyStatus() {
 }
 
 function updateTokenStatus() {
-  if (!tokenStatusEl) return;
-  if (hfToken) {
-    tokenStatusEl.textContent = "✓ zapisany";
-    tokenStatusEl.className = "token-status saved";
-  } else {
-    tokenStatusEl.textContent = "";
-    tokenStatusEl.className = "token-status";
-  }
+  setSavedStatus(tokenStatusEl, hfToken);
 }
 
 // Modele Hugging Face do generowania obrazow (text-to-image).
@@ -112,7 +119,7 @@ const hfImageModels = {
 
 // Pole wyboru modelu ma sens tylko dla Hugging Face; Puter.js wymaga http/https.
 function updateImageProviderUI() {
-  const isHuggingFace = imageProviderSelect.value === "huggingface";
+  const isHuggingFace = getRadio("image-provider") === "huggingface";
   imageModelSelect.disabled = !isHuggingFace;
 
   const puterOnFile = isFileProtocol && !isHuggingFace;
@@ -571,7 +578,7 @@ async function continueStory(choice) {
 
 // Wybiera zrodlo inspiracji wg ustawienia (SCP Wiki albo Google AI / Gemini).
 async function fetchResearch(topic) {
-  if (researchSourceSelect.value === "google") {
+  if (getRadio("research-source") === "google") {
     setBusy("Pytam Google AI...");
     return fetchGoogleResearch(topic);
   }
@@ -740,14 +747,14 @@ function titleFromUrl(url) {
 }
 
 function currentImageSourceLabel() {
-  if (imageProviderSelect.value === "huggingface") {
+  if (getRadio("image-provider") === "huggingface") {
     return imageModelSelect.value === "sdxl" ? "Stable Diffusion XL" : "FLUX.1-schnell";
   }
   return "Puter.js";
 }
 
 function imagePlaceholderText(number) {
-  if (isFileProtocol && imageProviderSelect.value !== "huggingface") {
+  if (isFileProtocol && getRadio("image-provider") !== "huggingface") {
     return "Puter.js wymaga http/https.";
   }
 
@@ -755,7 +762,7 @@ function imagePlaceholderText(number) {
 }
 
 async function generateImages(story) {
-  if (imageProviderSelect.value === "huggingface") {
+  if (getRadio("image-provider") === "huggingface") {
     return generateImagesHuggingFace(story);
   }
   return generateImagesPuter(story);
@@ -912,20 +919,23 @@ function loadLastStory() {
 }
 
 function savePreferences() {
+  // W trybie RAM nie zapisujemy kluczy na dysk (zostaja tylko w pamieci sesji).
+  const persistKeys = getRadio("key-storage") !== "ram";
   localStorage.setItem(
     memoryKeys.preferences,
     JSON.stringify({
       textAi: aiToggle.checked,
       research: researchToggle.checked,
-      researchSource: researchSourceSelect.value,
+      researchSource: getRadio("research-source"),
       geminiModel: geminiModelSelect.value,
       geminiGrounding: geminiGroundingToggle.checked,
       imageAi: imageToggle.checked,
-      imageProvider: imageProviderSelect.value,
+      imageProvider: getRadio("image-provider"),
       imageModel: imageModelSelect.value,
       narrator: narratorToggle.checked,
-      hfToken,
-      googleKey,
+      keyStorage: getRadio("key-storage"),
+      hfToken: persistKeys ? hfToken : "",
+      googleKey: persistKeys ? googleKey : "",
       sceneCount: Number(sceneCountSelect.value),
     }),
   );
@@ -936,12 +946,13 @@ function loadPreferences() {
     textAi: false,
     research: false,
     researchSource: "scp",
-    geminiModel: "gemini-2.5-flash",
+    geminiModel: "gemini-2.5-flash-lite",
     geminiGrounding: true,
     imageAi: false,
     imageProvider: "puter",
     imageModel: "flux-schnell",
     narrator: false,
+    keyStorage: "localhost",
     hfToken: "",
     googleKey: "",
     sceneCount: 3,
@@ -1023,17 +1034,23 @@ researchToggle.addEventListener("change", () => {
   updateOptionsVisibility();
   savePreferences();
 });
-researchSourceSelect.addEventListener("change", () => {
+onRadioChange("research-source", () => {
   updateOptionsVisibility();
   savePreferences();
 });
 geminiModelSelect.addEventListener("change", savePreferences);
 geminiGroundingToggle.addEventListener("change", savePreferences);
 imageToggle.addEventListener("change", savePreferences);
-imageProviderSelect.addEventListener("change", () => {
+onRadioChange("image-provider", () => {
   updateImageProviderUI();
   updateOptionsVisibility();
   savePreferences();
+});
+onRadioChange("key-storage", () => {
+  // Zmiana trybu: zapisuje (localhost) lub usuwa z dysku (RAM) klucze + odswiezenie statusow.
+  savePreferences();
+  updateTokenStatus();
+  updateGoogleKeyStatus();
 });
 imageModelSelect.addEventListener("change", savePreferences);
 narratorToggle.addEventListener("change", savePreferences);
