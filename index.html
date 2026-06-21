@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Creepypasta Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- OPCJE OVERLAY -->
+    <div id="options-overlay" class="options-overlay" hidden>
+      <div class="options-modal">
+        <div class="options-header">
+          <span class="kicker">Opcje</span>
+          <button id="close-options-button" class="icon-button" type="button" aria-label="Zamknij">✕</button>
+        </div>
+        <div class="options-tabs">
+          <button class="options-tab active" data-tab="ai" type="button">AI</button>
+          <button class="options-tab" data-tab="narration" type="button">Narracja</button>
+        </div>
+        <div class="options-body">
+
+          <!-- ZAKŁADKA AI -->
+          <div class="tab-panel" id="tab-ai">
+            <section class="options-section">
+              <h3>📝 Treść</h3>
+              <div class="toggle-stack">
+                <label class="toggle">
+                  <input id="ai-toggle" type="checkbox" />
+                  <span>Tekst AI <em>(Hugging Face)</em></span>
+                </label>
+                <label class="toggle">
+                  <input id="research-toggle" type="checkbox" />
+                  <span>Research / inspiracja</span>
+                </label>
+              </div>
+              <label class="select-field">
+                Źródło inspiracji
+                <select id="research-source">
+                  <option value="scp">SCP Wiki</option>
+                  <option value="google">Google AI (Gemini)</option>
+                </select>
+              </label>
+              <div id="hf-token-block">
+                <label class="token-field">
+                  <span>Token Hugging Face <small id="token-status" class="token-status"></small></span>
+                  <input id="hf-token" type="password" autocomplete="off" spellcheck="false" placeholder="hf_..." data-lpignore="true" data-1p-ignore data-form-type="other" />
+                </label>
+                <a class="token-link" href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">Wygeneruj token →</a>
+              </div>
+              <div id="google-key-block">
+                <label class="token-field">
+                  <span>Klucz Google AI Studio <small id="google-key-status" class="token-status"></small></span>
+                  <input id="google-key" type="password" autocomplete="off" spellcheck="false" placeholder="AQ.… lub AIza…" data-lpignore="true" data-1p-ignore data-form-type="other" />
+                </label>
+                <a class="token-link" href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">Wygeneruj klucz Google AI →</a>
+                <label class="select-field">
+                  Model Gemini
+                  <select id="gemini-model">
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                    <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                    <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                  </select>
+                </label>
+                <label class="toggle">
+                  <input id="gemini-grounding" type="checkbox" />
+                  <span>Grounding <em>(Google Search)</em></span>
+                </label>
+              </div>
+            </section>
+
+            <section class="options-section">
+              <h3>🔊 Dźwięk</h3>
+              <div class="toggle-stack">
+                <label class="toggle">
+                  <input id="narrator-toggle" type="checkbox" />
+                  <span>Lektor <em>(Web Speech API)</em></span>
+                </label>
+              </div>
+            </section>
+
+            <section class="options-section">
+              <h3>🖼 Grafika</h3>
+              <div class="toggle-stack">
+                <label class="toggle">
+                  <input id="image-toggle" type="checkbox" />
+                  <span>Obrazy AI</span>
+                </label>
+              </div>
+              <label class="select-field">
+                Źródło obrazów
+                <select id="image-provider">
+                  <option value="puter">Puter.js (bez tokenu, wymaga http)</option>
+                  <option value="huggingface">Hugging Face (token)</option>
+                </select>
+              </label>
+              <label class="select-field">
+                Model Hugging Face
+                <select id="image-model">
+                  <option value="flux-schnell">FLUX.1-schnell</option>
+                  <option value="sdxl">Stable Diffusion XL</option>
+                </select>
+              </label>
+              <label class="select-field">
+                Liczba kadrów
+                <select id="scene-count">
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </label>
+            </section>
+          </div>
+
+          <!-- ZAKŁADKA NARRACJA -->
+          <div class="tab-panel" id="tab-narration" hidden>
+            <section class="options-section">
+              <h3>Krzywe narracji</h3>
+              <p class="charts-hint">Przeciągnij punkty myszką. Dwuklik na linię — nowy punkt. Prawy klik na punkt — usuń.</p>
+              <div class="chart-block">
+                <div class="chart-label-row">
+                  <span class="chart-name">Tempo akcji</span>
+                  <span class="chart-unit">spokój → kulminacja</span>
+                </div>
+                <canvas id="pace-canvas" class="narrative-canvas" width="420" height="110"></canvas>
+              </div>
+              <div class="chart-block">
+                <div class="chart-label-row">
+                  <span class="chart-name">Poziom grozy</span>
+                  <span class="chart-unit">cisza → horror</span>
+                </div>
+                <canvas id="fear-canvas" class="narrative-canvas" width="420" height="110"></canvas>
+              </div>
+            </section>
+            <section class="options-section">
+              <h3>Punkt zwrotu</h3>
+              <div class="twist-row">
+                <span class="twist-label">⬡</span>
+                <span class="twist-hint" id="twist-hint">Przeciągnij znacznik na osi czasu</span>
+              </div>
+              <div class="twist-track-wrapper">
+                <canvas id="twist-canvas" class="twist-canvas" width="420" height="36"></canvas>
+              </div>
+            </section>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <!-- LEWA KOLUMNA -->
+      <section class="control-panel">
+        <div class="title-block">
+          <p class="kicker">Generator grozy</p>
+          <h1>Creepypasta<br>Studio</h1>
+          <p>Wpisz temat — aplikacja stworzy interaktywną creepypastę z obrazami wplecionymi w opowieść.</p>
+        </div>
+
+        <form id="story-form" class="story-form">
+          <label for="topic-input">Temat opowieści</label>
+          <textarea id="topic-input" maxlength="320"
+            placeholder="np. obiekt SCP znaleziony w opuszczonym sanatorium pod miastem"></textarea>
+          <div class="button-row">
+            <button id="random-topic-button" type="button">Losowy</button>
+            <button id="generate-button" class="primary-action" type="submit">Generuj opowieść</button>
+          </div>
+        </form>
+
+        <div class="panel-footer">
+          <p class="api-desc">Tekst: Hugging Face · Obrazy: Puter.js · Badania: SCP Wiki</p>
+          <button id="options-button" class="options-trigger" type="button">⚙ Opcje</button>
+        </div>
+      </section>
+
+      <!-- PRAWA KOLUMNA -->
+      <section class="story-panel">
+        <div class="toolbar">
+          <div>
+            <p class="kicker">Opowieść</p>
+            <h2 id="story-title">Czeka na temat</h2>
+            <span id="mode-badge" class="mode-badge"></span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="speak-button" type="button">Czytaj</button>
+            <button id="clear-button" type="button">Wyczyść</button>
+          </div>
+        </div>
+
+        <article id="story-output" class="story-output">
+          <p>Wpisz temat i wygeneruj historię. Bez tokenu HF działa lokalny tryb demonstracyjny.</p>
+        </article>
+
+        <section class="choice-section">
+          <p class="kicker">Wybory</p>
+          <div id="choice-list" class="choice-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script src="charts.js"></script>
+  </body>
+</html>

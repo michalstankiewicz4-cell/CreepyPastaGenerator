@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "serve",
+      "detail": "Uruchamia lokalny serwer HTTP na porcie 4173 (jesli juz dziala, nie startuje drugiego)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$up = try { (Invoke-WebRequest http://localhost:4173 -UseBasicParsing -TimeoutSec 1).StatusCode -eq 200 } catch { $false }; if (-not $up) { Start-Process python -ArgumentList '-m','http.server','4173' -WorkingDirectory '${workspaceFolder}' -WindowStyle Hidden; do { Start-Sleep -Milliseconds 300; $up = try { (Invoke-WebRequest http://localhost:4173 -UseBasicParsing -TimeoutSec 1).StatusCode -eq 200 } catch { $false } } until ($up) }; Write-Host 'Serwer dziala na http://localhost:4173'"
+      ],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

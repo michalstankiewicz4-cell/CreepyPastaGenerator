@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Creepypasta Studio (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:4173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "serve"
+    },
+    {
+      "name": "Creepypasta Studio (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:4173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "serve"
+    }
+  ]
+}

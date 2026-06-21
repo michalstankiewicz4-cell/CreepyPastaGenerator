@@ -1,0 +1,10 @@
+# Lokalna konfiguracja narzędzi
+.claude/
+
+# Profil przeglądarki uruchamianej przez debugger VSCode (gdyby powstał)
+.vscode/.browser-profile/
+
+# Pliki systemowe / edytora
+Thumbs.db
+.DS_Store
+*.log
