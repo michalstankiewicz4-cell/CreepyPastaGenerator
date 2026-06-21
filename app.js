@@ -228,31 +228,34 @@ async function generateStory(event) {
   savePreferences();
   setBusy("Piszę opowieść...");
 
-  const settings = {
-    topic,
-    sceneCount: Number(sceneCountSelect.value),
-    research: [],
-    previousStory: "",
-    choice: "",
-    narration: buildNarration(0),
-  };
+  try {
+    const settings = {
+      topic,
+      sceneCount: Number(sceneCountSelect.value),
+      research: [],
+      previousStory: "",
+      choice: "",
+      narration: buildNarration(0),
+    };
 
-  if (researchToggle.checked) {
-    settings.research = await fetchResearch(topic).catch(() => []);
+    if (researchToggle.checked) {
+      settings.research = await fetchResearch(topic).catch(() => []);
+    }
+
+    const story = await generateSegment(settings);
+    story.progress = 0;
+    renderStory(story);
+    saveLastStory(story);
+    speakStoryIfEnabled(story.story);
+
+    if (imageToggle.checked) {
+      await generateImages(story);
+    }
+  } catch (error) {
+    showNotice(`Błąd generowania: ${error.message}. Spróbuj ponownie lub kliknij Wyczyść.`);
+  } finally {
+    setReady();
   }
-
-  let story = await generateSegment(settings);
-
-  story.progress = 0;
-  renderStory(story);
-  saveLastStory(story);
-  speakStoryIfEnabled(story.story);
-
-  if (imageToggle.checked) {
-    await generateImages(story);
-  }
-
-  setReady();
 }
 
 async function createAiStory(settings) {
@@ -275,7 +278,7 @@ async function createAiStory(settings) {
         {
           role: "system",
           content:
-            "Piszesz po polsku interaktywne creepypasty w klimacie SCP. Używaj poprawnej polszczyzny z pełnymi znakami diakrytycznymi (ą, ć, ę, ł, ń, ó, ś, ź, ż). Zwróć tylko JSON: title, story, scenes, choices. story ma mieć 900-1400 znaków, bez gore i bez przemocy wobec dzieci. Research z SCP Wiki traktuj jako inspirację i streszczenie tła, nie kopiuj dosłownie. Jeśli dostajesz previousStory i choice, kontynuuj historię. scenes to tablica z polami caption i imagePrompt. choices to 3 decyzje dla czytelnika. imagePrompt po angielsku, cinematic SCP horror atmosphere, no text, no gore. Pole narration to plan łuku narracyjnego dla TEGO fragmentu: pace.level (1-10) i fear.level (1-10) z trendem (rośnie/maleje/utrzymuje się). Dostosuj tempo i natężenie grozy do tych wartości oraz ich trendu. Jeśli narration.twist jest true, wprowadź w tym fragmencie wyraźny zwrot akcji.",
+            "Piszesz po polsku interaktywne creepypasty w klimacie SCP. Używaj poprawnej polszczyzny z pełnymi znakami diakrytycznymi (ą, ć, ę, ł, ń, ó, ś, ź, ż). Zwróć tylko JSON: title, story, scenes, choices. story ma mieć 900-1400 znaków, bez gore i bez przemocy wobec dzieci. Pole research traktuj jako inspirację i streszczenie tła, nie kopiuj dosłownie. Jeśli dostajesz previousStory i choice, kontynuuj historię. scenes to tablica z polami caption i imagePrompt. choices to 3 decyzje dla czytelnika. imagePrompt po angielsku, cinematic SCP horror atmosphere, no text, no gore. Pole narration to plan łuku narracyjnego dla TEGO fragmentu: pace.level (1-10) i fear.level (1-10) z trendem (rośnie/maleje/utrzymuje się). Dostosuj tempo i natężenie grozy do tych wartości oraz ich trendu. Jeśli narration.twist jest true, wprowadź w tym fragmencie wyraźny zwrot akcji.",
         },
         {
           role: "user",
@@ -546,34 +549,48 @@ async function continueStory(choice) {
     topic: topicInput.value.trim() || currentStory.title,
     sceneCount: Number(sceneCountSelect.value),
     research: currentStory.research || [],
-    previousStory: currentStory.story,
+    // Do AI wysylamy tylko koncowke historii — pelna tresc rosnie z kazdym wyborem
+    // i potrafi przekroczyc limit modelu (czesta przyczyna nieudanej kontynuacji).
+    previousStory: tailText(currentStory.story),
     choice,
     narration: buildNarration(progress),
   };
 
   setBusy("Kontynuuję wybór...");
 
-  const nextStory = await generateSegment(settings);
+  try {
+    const nextStory = await generateSegment(settings);
+    const mergedStory = {
+      ...nextStory,
+      version: storyVersion,
+      title: currentStory.title,
+      story: `${currentStory.story}\n\n${nextStory.story}`,
+      research: currentStory.research || [],
+      scenes: [...(currentStory.scenes || []), ...(nextStory.scenes || [])],
+      progress,
+    };
 
-  const mergedStory = {
-    ...nextStory,
-    version: storyVersion,
-    title: currentStory.title,
-    story: `${currentStory.story}\n\n${nextStory.story}`,
-    research: currentStory.research || [],
-    scenes: [...(currentStory.scenes || []), ...(nextStory.scenes || [])],
-    progress,
-  };
+    renderStory(mergedStory);
+    saveLastStory(mergedStory);
+    speakStoryIfEnabled(nextStory.story);
 
-  renderStory(mergedStory);
-  saveLastStory(mergedStory);
-  speakStoryIfEnabled(nextStory.story);
-
-  if (imageToggle.checked) {
-    await generateImages(mergedStory);
+    if (imageToggle.checked) {
+      await generateImages(mergedStory);
+    }
+  } catch (error) {
+    showNotice(`Błąd kontynuacji: ${error.message}. Kliknij Wyczyść i zacznij od nowa.`);
+  } finally {
+    setReady();
   }
+}
 
-  setReady();
+// Zwraca koncowke tekstu (do max znakow), zaczynajac od granicy zdania, by nie przycinac w polowie.
+function tailText(text, max = 2200) {
+  const value = String(text || "");
+  if (value.length <= max) return value;
+  const tail = value.slice(value.length - max);
+  const sentenceStart = tail.search(/[.!?]\s+/);
+  return "…" + (sentenceStart >= 0 ? tail.slice(sentenceStart + 2) : tail);
 }
 
 // Wybiera zrodlo inspiracji wg ustawienia (SCP Wiki albo Google AI / Gemini).

@@ -176,6 +176,22 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.byline {
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.byline a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.byline a:hover {
+  color: var(--text);
+}
+
 .story-form {
   display: grid;
   gap: 12px;
@@ -282,7 +298,28 @@ select,
 
 .toolbar-actions {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.clear-hint {
+  margin: 0;
+  max-width: 240px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+
+.clear-hint strong {
+  color: var(--text);
 }
 
 .toolbar button,
@@ -396,6 +433,16 @@ select,
 
   .toolbar-actions {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-buttons {
+    flex-direction: column;
+  }
+
+  .clear-hint {
+    max-width: none;
+    text-align: left;
   }
 
   .toolbar button {

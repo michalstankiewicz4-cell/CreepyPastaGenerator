@@ -96,6 +96,12 @@ dostaje polecenie wprowadzenia zwrotu akcji.
 - **Czytaj / Zatrzymaj czytanie** — ręczne sterowanie lektorem.
 - **Wyczyść** — usuwa bieżącą historię i zatrzymuje lektora.
 
+## Rozwiązywanie problemów
+
+**W razie problemów z kontynuacją opowieści naciśnij „Wyczyść" i zacznij od
+nowa.** Przycisk kasuje zapisaną historię z `localStorage` i resetuje stan, więc
+usuwa większość problemów z zablokowaną lub niespójną kontynuacją.
+
 ## Zapis stanu (`localStorage`)
 
 - `creepypasta-studio-story` — ostatnia wygenerowana historia.
@@ -117,3 +123,8 @@ dostaje polecenie wprowadzenia zwrotu akcji.
 Klucze i tokeny są trzymane po stronie przeglądarki (w pamięci albo
 `localStorage`) — wygodne na czas prototypowania, ale w publicznej wersji
 powinny być ukryte za backendem, który pośredniczy w zapytaniach do API.
+
+## Autor i licencja
+
+Autor: **Michał Stankiewicz**. Projekt na licencji **MIT** (po polsku i
+angielsku) — zob. [LICENSE.md](LICENSE.md).
