@@ -76,6 +76,7 @@ narratorToggle.checked = preferences.narrator;
 // po odswiezeniu bywa przejmowane przez autofill przegladarki i zwraca pusta wartosc do JS.
 let hfToken = preferences.hfToken || "";
 let googleKey = preferences.googleKey || "";
+let isGenerating = false; // blokada przed rownoleglym generowaniem/kontynuacja (np. podwojny klik)
 hfTokenInput.value = hfToken;
 googleKeyInput.value = googleKey;
 sceneCountSelect.value = String(preferences.sceneCount);
@@ -224,6 +225,8 @@ async function generateStory(event) {
     topicInput.focus();
     return;
   }
+  if (isGenerating) return;
+  isGenerating = true;
 
   savePreferences();
   setBusy("Piszę opowieść...");
@@ -254,6 +257,7 @@ async function generateStory(event) {
   } catch (error) {
     showNotice(`Błąd generowania: ${error.message}. Spróbuj ponownie lub kliknij Wyczyść.`);
   } finally {
+    isGenerating = false;
     setReady();
   }
 }
@@ -541,8 +545,10 @@ function renderChoices(choices) {
 }
 
 async function continueStory(choice) {
+  if (isGenerating) return;
   const currentStory = loadLastStory();
   if (!currentStory) return;
+  isGenerating = true;
 
   const progress = Math.min(1, (currentStory.progress ?? 0) + narrationStep);
   const settings = {
@@ -580,6 +586,7 @@ async function continueStory(choice) {
   } catch (error) {
     showNotice(`Błąd kontynuacji: ${error.message}. Kliknij Wyczyść i zacznij od nowa.`);
   } finally {
+    isGenerating = false;
     setReady();
   }
 }
