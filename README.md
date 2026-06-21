@@ -89,6 +89,24 @@ klik** usuwa (min. 2 punkty). Opowieść posuwa się fragmentami (krok ≈ 1/5 �
 **trend** tempa oraz grozy, a gdy znacznik zwrotu trafi w bieżący fragment, AI
 dostaje polecenie wprowadzenia zwrotu akcji.
 
+## Token Hugging Face — wymagane uprawnienia
+
+Token generujesz na https://huggingface.co/settings/tokens. Wystarczy jedna z opcji:
+
+- **Token typu „Read"** — najprostszy; pokrywa wszystko, czego potrzebuje aplikacja.
+- **Token „Fine-grained"** — z włączonym uprawnieniem **„Make calls to Inference
+  Providers"** (sekcja *Inference*). To samo uprawnienie obsługuje zarówno
+  **tekst** (`router.huggingface.co`), jak i **obrazy** (`hf-inference`:
+  FLUX.1-schnell / Stable Diffusion XL).
+
+Nie są potrzebne uprawnienia do zapisu (write), repozytoriów ani billingu konta.
+Modele używane przez aplikację są otwarte (nie „gated"), więc nie trzeba
+dodatkowego dostępu do repo.
+
+> **Limity ≠ uprawnienia.** Nawet z poprawnym tokenem darmowy plan ma limity —
+> błąd `HTTP 429` oznacza wyczerpany limit (nie brak uprawnień), a `401/403`
+> oznacza nieprawidłowy/niedozwolony token.
+
 ## Przyciski
 
 - **Generuj opowieść** — uruchamia generowanie.
